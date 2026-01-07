@@ -1,0 +1,12 @@
+{
+  "name": "retailkart-backend",
+  "version": "1.0.0",
+  "description": "This is a backend of an ecommerce project",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
