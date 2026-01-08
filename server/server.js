@@ -6,6 +6,9 @@ import userRoute from "./routes/userRoute.js";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+//middleware for accepting JSON
+app.use(express.json());
+
 //Sample Route: http://localhost:8000/api/v1/user/register
 app.use("/api/v1/user", userRoute);
 
