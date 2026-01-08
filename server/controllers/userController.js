@@ -59,3 +59,62 @@ export const register = async (req, res) => {
     });
   }
 };
+
+export const verify = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      res.status(400).json({
+        success: false,
+        message: "Auth Token is missing or invalid",
+      });
+    }
+
+    /*AuthHeader looks like 
+    "[Bearer asds23adasdasd....]-Array" 
+    index=0=>Bearer 
+    index=1 =>token(asds23adasdasd....)
+    
+    So, basically we are extracting a token
+    */
+    const token = authHeader.split(" ")[1];
+
+    let decoded;
+    try {
+      /*Verify the token| Decoded will have a value of 
+      payload which we passed earlier i.e. id (in usercontroller)*/
+      decoded = jwt.verify(token, process.env.SECRET_KEY);
+    } catch (error) {
+      if (error.name === "TokenExpiredError") {
+        return res.status(400).json({
+          success: false,
+          message: "The registration token has expired!",
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: "Token verification failed.",
+      });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+    user.token = null;
+    user.isVerified = true;
+    await user.save();
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully!",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
