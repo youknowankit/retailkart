@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { verifyEmail } from "../email/verifyEmail.js";
 
+//REGISTER CONTROLLER
 export const register = async (req, res) => {
   try {
     //check if anything is missing
@@ -60,6 +61,7 @@ export const register = async (req, res) => {
   }
 };
 
+//VERIFY CONTROLLER
 export const verify = async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -119,6 +121,7 @@ export const verify = async (req, res) => {
   }
 };
 
+//RE-VERIFY CONTROLLER
 export const reVerify = async (req, res) => {
   try {
     const { email } = req.body;
@@ -145,6 +148,82 @@ export const reVerify = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+//LOGIN CONTROLLER
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    const existingUser = await User.findOne({ email });
+    if (!existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "User does not exist",
+      });
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      existingUser.password
+    );
+
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Credentials",
+      });
+    }
+
+    if (existingUser.isVerified === false) {
+      return res.status(400).json({
+        success: false,
+        message: "Verify your account then login",
+      });
+    }
+
+    //Generate Access token & reference Token
+    const accessToken = jwt.sign(
+      { id: existingUser._id },
+      process.env.SECRET_KEY,
+      { expiresIn: "10d" }
+    );
+    const refreshToken = jwt.sign(
+      { id: existingUser._id },
+      process.env.SECRET_KEY,
+      { expiresIn: "30d" }
+    );
+
+    existingUser.isLoggedIn = true;
+    await existingUser.save();
+
+    //Check for existing Session
+    const existingSession = await Session.findOne({ userId: existingUser._id });
+    if (existingSession) {
+      await Session.deleteOne({ userId: existingUser._id });
+    }
+
+    //create a new session for user
+    await Session.create({ userId: existingUser._id });
+    return res.status(200).json({
+      success: true,
+      message: `Welcome back ${existingUser.firstName}`,
+      user: existingUser,
+      accessToken,
+      refreshToken,
+    });
+  } catch (error) {
+    res.status(500).json({
       success: false,
       message: error.message,
     });
