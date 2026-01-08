@@ -2,6 +2,7 @@ import { User } from "../models/userModel.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { verifyEmail } from "../email/verifyEmail.js";
+import { Session } from "../models/sessionModel.js";
 
 //REGISTER CONTROLLER
 export const register = async (req, res) => {
