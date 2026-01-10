@@ -249,3 +249,39 @@ export const logout = async (req, res) => {
     });
   }
 };
+
+//FORGOT PASSWORD
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+    if (!user) {
+      res.status(400).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    //If user is found then we would generate an otp and we would send that OTP on mail
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); //10mins Expiry
+
+    user.otp = otp;
+    user.otpExpiry = otpExpiry;
+
+    await user.save();
+
+    //To send OTP over mail
+    await sendOTPMail(otp, email);
+
+    return res.status(200).json({
+      success: true,
+      message: "OTP sent to email successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
