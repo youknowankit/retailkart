@@ -231,3 +231,21 @@ export const login = async (req, res) => {
   }
 };
 
+//LOGOUT CONTROLLER
+export const logout = async (req, res) => {
+  try {
+    //We are getting userId from req.id which we assigned in middleware
+    const userId = req.id;
+    await Session.deleteMany({ userId: userId });
+    await User.findByIdAndUpdate(userId, { isLoggedIn: false });
+    return res.status(200).json({
+      success: true,
+      message: "User Logged Out successfully!",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
